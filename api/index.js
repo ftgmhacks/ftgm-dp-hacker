@@ -1,20 +1,18 @@
 export default async function handler(req, res) {
-  // 1. Set CORS headers to allow all origins
+  // 1. CORS Headers
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Handle OPTIONS request (Pre-flight)
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
   }
 
-  // 2. Credits and Meta Information
+  // 2. Get number from Query Params (e.g., /api?num=92310...)
+  const { num } = req.query;
+
   const credits = {
     Dev: "Rana Faisal Ali",
     Brand: "FTGM",
@@ -22,23 +20,30 @@ export default async function handler(req, res) {
     Contact: "923104882921 For more"
   };
 
-  const targetUrl = "https://unavatar.io/whatsapp/923104882921";
+  if (!num) {
+    return res.status(400).json({ 
+      error: "Please provide a number. Example: ?num=923104882921",
+      ...credits 
+    });
+  }
+
+  const targetUrl = `https://unavatar.io/whatsapp/${num}`;
 
   try {
-    // If you want to return the Image URL + Credits as JSON:
+    // Agar JSON chahiye (?json=true)
     if (req.query.json === 'true') {
       return res.status(200).json({
-        ...credits,
-        avatar_url: targetUrl
+        phone_number: num,
+        avatar_url: targetUrl,
+        ...credits
       });
     }
 
-    // Default behavior: Redirect to the image with credits in headers
+    // Direct Image Redirect
     res.setHeader('X-Developer', credits.Dev);
-    res.setHeader('X-Brand', credits.Brand);
     res.redirect(302, targetUrl);
 
   } catch (error) {
-    res.status(500).json({ error: "Internal Server Error", ...credits });
+    res.status(500).json({ error: "Server Error", ...credits });
   }
 }
