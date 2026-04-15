@@ -1,18 +1,37 @@
 export default async function handler(req, res) {
-  // 1. CORS Headers
+  const allowedDomain = "ftgm-dp-hacker.vercel.app";
+  
+  // Request kahan se aa rahi hai (Origin or Referer)
+  const origin = req.headers.origin || "";
+  const referer = req.headers.referer || "";
+
+  // Domain Lock Logic
+  const isAllowed = origin.includes(allowedDomain) || referer.includes(allowedDomain);
+
+  // Agar domain match nahi karti toh "Chutiya" message show karo
+  if (!isAllowed) {
+    return res.status(403).json({
+      status: "Blocked",
+      message: "We Detect That You Are a Chutiya Copy Paster! So This Api is Not Working For You Baby",
+      credits: {
+        Dev: "Rana Faisal Ali",
+        Brand: "FTGM"
+      }
+    });
+  }
+
+  // --- Agar domain sahi hai toh baaki code chale ga ---
+
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', `https://${allowedDomain}`);
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
   }
 
-  // 2. Get number from Query Params (e.g., /api?num=92310...)
   const { num } = req.query;
-
   const credits = {
     Dev: "Rana Faisal Ali",
     Brand: "FTGM",
@@ -22,7 +41,7 @@ export default async function handler(req, res) {
 
   if (!num) {
     return res.status(400).json({ 
-      error: "Please provide a number. Example: ?num=923104882921",
+      error: "Number Missing! Example: ?num=923104882921",
       ...credits 
     });
   }
@@ -30,7 +49,6 @@ export default async function handler(req, res) {
   const targetUrl = `https://unavatar.io/whatsapp/${num}`;
 
   try {
-    // Agar JSON chahiye (?json=true)
     if (req.query.json === 'true') {
       return res.status(200).json({
         phone_number: num,
@@ -39,11 +57,8 @@ export default async function handler(req, res) {
       });
     }
 
-    // Direct Image Redirect
-    res.setHeader('X-Developer', credits.Dev);
     res.redirect(302, targetUrl);
-
   } catch (error) {
-    res.status(500).json({ error: "Server Error", ...credits });
+    res.status(500).json({ error: "Server Error" });
   }
-}
+  }
